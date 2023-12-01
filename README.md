@@ -1,5 +1,5 @@
 ![ci](https://github.com/janezicmatej/aoc-template/actions/workflows/ci.yml/badge.svg)
-# Advent-of-Code {YEAR}
+# Advent-of-Code 2023
 *This is a dumbed down version of [fspoettel/advent-of-code-rust](https://github.com/fspoettel/advent-of-code-rust) with some extra features*
 
 ## Project overview
