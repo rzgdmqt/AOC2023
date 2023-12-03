@@ -6,14 +6,14 @@ pub fn part_one(input: &str) -> Option<u32> {
     let mut sum = 0;
     for line in lines {
         let mut all_ok = true;
-        let space = line.find(" ").unwrap();
-        let colon = line.find(":").unwrap();
+        let space = line.find(' ').unwrap();
+        let colon = line.find(':').unwrap();
         let id = &line[space + 1..colon];
-        let games = (&line[colon + 2..]).split("; ");
+        let games = line[colon + 2..].split("; ");
         'game_loop: for game in games {
             let colors = game.split(", ");
             for color in colors {
-                let num_col: Vec<&str> = color.split(" ").collect();
+                let num_col: Vec<&str> = color.split(' ').collect();
                 if num_col[1] == "red" && num_col[0].parse::<u32>().ok().unwrap() > red
                     || num_col[1] == "blue" && num_col[0].parse::<u32>().ok().unwrap() > blue
                     || num_col[1] == "green" && num_col[0].parse::<u32>().ok().unwrap() > green
@@ -37,12 +37,12 @@ pub fn part_two(input: &str) -> Option<u32> {
         let mut min_red = 1;
         let mut min_blue = 1;
         let mut min_green = 1;
-        let colon = line.find(":").unwrap();
-        let games = (&line[colon + 2..]).split("; ");
+        let colon = line.find(':').unwrap();
+        let games = line[colon + 2..].split("; ");
         for game in games {
             let colors = game.split(", ");
             for color in colors {
-                let num_col: Vec<&str> = color.split(" ").collect();
+                let num_col: Vec<&str> = color.split(' ').collect();
                 if num_col[1] == "red" {
                     if min_red > 1 {
                         min_red = min_red.max(num_col[0].parse::<u32>().ok().unwrap())
