@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-type MyMap = HashMap<(i32, i32), HashSet<(u32, i32, i32, i32)>>;
+type Point = (i32, i32);
+
+type MyMap = HashMap<Point, HashSet<(u32, i32, i32, i32)>>;
 
 pub fn part_one(input: &str) -> Option<u32> {
     let mut nums = Vec::new();
