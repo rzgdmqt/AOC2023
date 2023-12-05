@@ -115,7 +115,7 @@ fn find_lowest_location_2(seeds: Vec<Range>, mappings: HashMap<String, Mapping>)
     let mut mapped_number = Vec::new();
     for category in categories {
         let mapping = mappings.get(category).unwrap();
-        'queue: while let Some(Range { start, end }) = current_number.pop() {
+        'stack: while let Some(Range { start, end }) = current_number.pop() {
             for (to, from, range) in mapping.to_from.iter() {
                 let max_start = start.max(*from);
                 let min_end = end.min(from + range);
@@ -136,13 +136,10 @@ fn find_lowest_location_2(seeds: Vec<Range>, mappings: HashMap<String, Mapping>)
                             end,
                         })
                     }
-                    continue 'queue;
+                    continue 'stack;
                 }
             }
-            mapped_number.push(Range {
-                start,
-                end,
-            })
+            mapped_number.push(Range { start, end })
         }
         current_number = mapped_number.clone();
         mapped_number = Vec::new();
