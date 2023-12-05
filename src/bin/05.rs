@@ -99,7 +99,6 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(find_lowest_location(seeds, mappings) as u32)
 }
 
-// 28580589
 fn find_lowest_location_2(seeds: Vec<Range>, mappings: HashMap<String, Mapping>) -> isize {
     let categories = [
         "seed-to-soil",
