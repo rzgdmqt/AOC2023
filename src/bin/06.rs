@@ -32,9 +32,26 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let (line1, line2) = input.split_once('\n').unwrap();
-    let time = line1.replace(' ', "").parse::<usize>().ok().unwrap();
-    let dist = line2.replace(' ', "").parse::<usize>().ok().unwrap();
+    let mut time = Vec::new();
+    let mut dist = Vec::new();
+    for (i, line) in input.lines().enumerate() {
+        if i == 0 {
+            for num in line.split_whitespace() {
+                if num.parse::<usize>().is_ok() {
+                    time.push(num)
+                }
+            }
+        }
+        if i == 1 {
+            for num in line.split_whitespace() {
+                if num.parse::<usize>().is_ok() {
+                    dist.push(num)
+                }
+            }
+        }
+    }
+    let time = time.join("").parse::<usize>().ok().unwrap();
+    let dist = dist.join("").parse::<usize>().ok().unwrap();
     let mut ways_single = 0;
     for i in 0..=time {
         let my_distance = i * (time - i);
