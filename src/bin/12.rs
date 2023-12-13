@@ -61,11 +61,14 @@
 //     count as usize
 // }
 
-use std::collections::{hash_map, HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    iter::once,
+};
 
 use itertools::Itertools;
 
-#[derive(PartialEq, PartialOrd, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Hash)]
 enum ThreeValue {
     Can,
     Must,
@@ -77,18 +80,17 @@ fn replace_char_at_index(input: &str, index: usize, new_char: char) -> String {
     if let Some(existing_char) = chars.get_mut(index) {
         *existing_char = new_char;
     }
-    chars[index..].into_iter().collect()
+    chars.into_iter().collect()
 }
 
 fn solve(seq: &str, ins: Vec<usize>) -> usize {
-    let mut count = 0;
-    let mut memo_hash: HashMap<(ThreeValue, &str, &Vec<usize>), usize> = HashMap::new();
+    let mut memo_hash: HashMap<(ThreeValue, String, Vec<usize>), usize> = HashMap::new();
 
     fn rec_solve(
         start: ThreeValue,
-        seq: &str,
-        ins: &Vec<usize>,
-        memo_hash: &mut HashMap<(ThreeValue, &str, &Vec<usize>), usize>,
+        seq: String,
+        ins: &[usize],
+        memo_hash: &mut HashMap<(ThreeValue, String, Vec<usize>), usize>,
     ) -> usize {
         match seq.chars().next() {
             None => {
@@ -104,80 +106,285 @@ fn solve(seq: &str, ins: Vec<usize>) -> usize {
                     _ => {
                         if !memo_hash.contains_key(&(
                             ThreeValue::Can,
-                            seq[1..].to_string(),
+                            seq.clone()[1..].to_string(),
                             ins.to_vec(),
                         )) {
-                            let value = rec_solve(ThreeValue::Can, &seq[1..], ins, memo_hash);
+                            let value = rec_solve(
+                                ThreeValue::Can,
+                                seq.clone()[1..].to_string(),
+                                ins,
+                                memo_hash,
+                            );
                             memo_hash.insert(
-                                (ThreeValue::Can, seq[1..].to_string(), ins.to_vec()),
+                                (ThreeValue::Can, seq.clone()[1..].to_string(), ins.to_vec()),
                                 value,
                             );
                         }
                         *memo_hash
-                            .get(&(ThreeValue::Can, seq[1..].to_string(), ins.to_vec()))
+                            .get(&(ThreeValue::Can, seq.clone()[1..].to_string(), ins.to_vec()))
                             .unwrap()
                     }
                 },
                 '#' => match start {
                     ThreeValue::MustNot => 0,
                     _ => {
-                        if ins.len() == 0 {
+                        if ins.is_empty() {
                             return 0;
                         } else if ins[0] == 1 {
-                            rec_solve(
-                                ThreeValue::MustNot,
-                                &seq[1..],
-                                &ins[1..].to_vec(),
-                                memo_hash,
-                            )
+                            {
+                                if !memo_hash.contains_key(&(
+                                    ThreeValue::MustNot,
+                                    seq.clone()[1..].to_string(),
+                                    ins[1..].to_vec(),
+                                )) {
+                                    let value = rec_solve(
+                                        ThreeValue::MustNot,
+                                        seq.clone()[1..].to_string(),
+                                        &ins[1..],
+                                        memo_hash,
+                                    );
+                                    memo_hash.insert(
+                                        (
+                                            ThreeValue::MustNot,
+                                            seq.clone()[1..].to_string(),
+                                            ins[1..].to_vec(),
+                                        ),
+                                        value,
+                                    );
+                                }
+                                *memo_hash
+                                    .get(&(
+                                        ThreeValue::MustNot,
+                                        seq.clone()[1..].to_string(),
+                                        ins[1..].to_vec(),
+                                    ))
+                                    .unwrap()
+                            }
                         } else {
-                            let mut ins_clone = ins.clone();
+                            let mut ins_clone = ins.to_vec();
                             if let Some(first) = ins_clone.first_mut() {
                                 *first -= 1;
                             }
-                            rec_solve(ThreeValue::Must, &seq[1..], &ins_clone, memo_hash)
+                            if !memo_hash.contains_key(&(
+                                ThreeValue::Must,
+                                seq.clone()[1..].to_string(),
+                                ins_clone.to_vec(),
+                            )) {
+                                let value = rec_solve(
+                                    ThreeValue::Must,
+                                    seq.clone()[1..].to_string(),
+                                    &ins_clone,
+                                    memo_hash,
+                                );
+                                memo_hash.insert(
+                                    (
+                                        ThreeValue::Must,
+                                        seq.clone()[1..].to_string(),
+                                        ins_clone.to_vec(),
+                                    ),
+                                    value,
+                                );
+                            }
+                            *memo_hash
+                                .get(&(
+                                    ThreeValue::Must,
+                                    seq.clone()[1..].to_string(),
+                                    ins_clone.to_vec(),
+                                ))
+                                .unwrap()
                         }
                     }
                 },
                 '?' => match start {
                     ThreeValue::Must => {
                         if ins[0] > 1 {
-                            rec_solve(
+                            if !memo_hash.contains_key(&(
                                 ThreeValue::Must,
-                                &replace_char_at_index(seq, 0, '#'),
-                                &ins,
-                                memo_hash,
-                            )
+                                replace_char_at_index(&seq, 0, '#'),
+                                ins.to_vec(),
+                            )) {
+                                let value = rec_solve(
+                                    ThreeValue::Must,
+                                    replace_char_at_index(&seq, 0, '#'),
+                                    &ins,
+                                    memo_hash,
+                                );
+                                memo_hash.insert(
+                                    (
+                                        ThreeValue::Must,
+                                        replace_char_at_index(&seq, 0, '#'),
+                                        ins.to_vec(),
+                                    ),
+                                    value,
+                                );
+                            }
+                            *memo_hash
+                                .get(&(
+                                    ThreeValue::Must,
+                                    replace_char_at_index(&seq, 0, '#'),
+                                    ins.to_vec(),
+                                ))
+                                .unwrap()
                         } else {
-                            rec_solve(
+                            if !memo_hash.contains_key(&(
                                 ThreeValue::MustNot,
-                                &seq[1..],
-                                &ins[1..].to_vec(),
-                                memo_hash,
-                            )
+                                seq.clone()[1..].to_string(),
+                                ins[1..].to_vec(),
+                            )) {
+                                let value = rec_solve(
+                                    ThreeValue::MustNot,
+                                    seq.clone()[1..].to_string(),
+                                    &ins[1..],
+                                    memo_hash,
+                                );
+                                memo_hash.insert(
+                                    (
+                                        ThreeValue::MustNot,
+                                        seq.clone()[1..].to_string(),
+                                        ins[1..].to_vec(),
+                                    ),
+                                    value,
+                                );
+                            }
+                            *memo_hash
+                                .get(&(
+                                    ThreeValue::MustNot,
+                                    seq.clone()[1..].to_string(),
+                                    ins[1..].to_vec(),
+                                ))
+                                .unwrap()
                         }
                     }
-                    ThreeValue::MustNot => rec_solve(ThreeValue::Can, &seq[1..], ins, memo_hash),
+                    ThreeValue::MustNot => {
+                        if !memo_hash.contains_key(&(
+                            ThreeValue::Can,
+                            seq.clone()[1..].to_string(),
+                            ins.to_vec(),
+                        )) {
+                            let value = rec_solve(
+                                ThreeValue::Can,
+                                seq.clone()[1..].to_string(),
+                                ins,
+                                memo_hash,
+                            );
+                            memo_hash.insert(
+                                (ThreeValue::Can, seq.clone()[1..].to_string(), ins.to_vec()),
+                                value,
+                            );
+                        }
+                        *memo_hash
+                            .get(&(ThreeValue::Can, seq.clone()[1..].to_string(), ins.to_vec()))
+                            .unwrap()
+                    }
                     ThreeValue::Can => {
                         if ins.is_empty() {
-                            return rec_solve(ThreeValue::MustNot, &seq[1..], ins, memo_hash);
+                            if !memo_hash.contains_key(&(
+                                ThreeValue::MustNot,
+                                seq.clone()[1..].to_string(),
+                                ins.to_vec(),
+                            )) {
+                                let value = rec_solve(
+                                    ThreeValue::MustNot,
+                                    seq.clone()[1..].to_string(),
+                                    ins,
+                                    memo_hash,
+                                );
+                                memo_hash.insert(
+                                    (
+                                        ThreeValue::MustNot,
+                                        seq.clone()[1..].to_string(),
+                                        ins.to_vec(),
+                                    ),
+                                    value,
+                                );
+                            }
+                            return *memo_hash
+                                .get(&(
+                                    ThreeValue::MustNot,
+                                    seq.clone()[1..].to_string(),
+                                    ins.to_vec(),
+                                ))
+                                .unwrap();
                         }
                         let a = if ins[0] > 1 {
-                            rec_solve(
+                            if !memo_hash.contains_key(&(
                                 ThreeValue::Must,
-                                &replace_char_at_index(seq, 0, '#'),
-                                &ins,
-                                memo_hash,
-                            )
+                                replace_char_at_index(&seq, 0, '#'),
+                                ins.to_vec(),
+                            )) {
+                                let value = rec_solve(
+                                    ThreeValue::Must,
+                                    replace_char_at_index(&seq, 0, '#'),
+                                    ins,
+                                    memo_hash,
+                                );
+                                memo_hash.insert(
+                                    (
+                                        ThreeValue::Must,
+                                        replace_char_at_index(&seq, 0, '#'),
+                                        ins.to_vec(),
+                                    ),
+                                    value,
+                                );
+                            }
+                            *memo_hash
+                                .get(&(
+                                    ThreeValue::Must,
+                                    replace_char_at_index(&seq, 0, '#'),
+                                    ins.to_vec(),
+                                ))
+                                .unwrap()
                         } else {
-                            rec_solve(
+                            if !memo_hash.contains_key(&(
                                 ThreeValue::MustNot,
-                                &seq[1..],
-                                &ins[1..].to_vec(),
-                                memo_hash,
-                            )
+                                seq.clone()[1..].to_string(),
+                                ins[1..].to_vec(),
+                            )) {
+                                let value = rec_solve(
+                                    ThreeValue::MustNot,
+                                    seq.clone()[1..].to_string(),
+                                    &ins[1..],
+                                    memo_hash,
+                                );
+                                memo_hash.insert(
+                                    (
+                                        ThreeValue::MustNot,
+                                        seq.clone()[1..].to_string(),
+                                        ins[1..].to_vec(),
+                                    ),
+                                    value,
+                                );
+                            }
+                            *memo_hash
+                                .get(&(
+                                    ThreeValue::MustNot,
+                                    seq.clone()[1..].to_string(),
+                                    ins[1..].to_vec(),
+                                ))
+                                .unwrap()
                         };
-                        let b = rec_solve(ThreeValue::Can, &seq[1..], ins, memo_hash);
+                        let b = {
+                            if !memo_hash.contains_key(&(
+                                ThreeValue::Can,
+                                seq.clone()[1..].to_string(),
+                                ins.to_vec(),
+                            )) {
+                                let value = rec_solve(
+                                    ThreeValue::Can,
+                                    seq.clone()[1..].to_string(),
+                                    ins,
+                                    memo_hash,
+                                );
+                                memo_hash.insert(
+                                    (ThreeValue::Can, seq.clone()[1..].to_string(), ins.to_vec()),
+                                    value,
+                                );
+                            }
+                            *memo_hash
+                                .get(&(ThreeValue::Can, seq.clone()[1..].to_string(), ins.to_vec()))
+                                .unwrap()
+                        };
+                        //rec_solve(ThreeValue::Can, &seq[1..].to_string(), ins, memo_hash);
                         a + b
                     }
                 },
@@ -186,8 +393,7 @@ fn solve(seq: &str, ins: Vec<usize>) -> usize {
         }
     }
 
-    rec_solve(ThreeValue::Can, seq, &ins, &mut memo_hash)
-    // count as usize
+    rec_solve(ThreeValue::Can, seq.to_string(), &ins, &mut memo_hash)
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
@@ -197,25 +403,41 @@ pub fn part_one(input: &str) -> Option<u32> {
         let ins = ins
             .split(',')
             .map(|c| c.parse::<usize>().ok().unwrap())
-            .collect_vec();
+            .collect::<Vec<usize>>();
         sum += solve(seq, ins)
     }
     Some(sum as u32)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    return None;
+fn unfold(sequence: Vec<char>, groups: Vec<usize>, n: usize) -> (Vec<char>, Vec<usize>) {
+    let seq_len = sequence.len();
+    let grp_len = groups.len();
+
+    let new_sequence = sequence
+        .into_iter()
+        .chain(once('?'))
+        .cycle()
+        .take(seq_len * n + n - 1)
+        .collect();
+    let new_groups = groups.into_iter().cycle().take(grp_len * n).collect();
+
+    (new_sequence, new_groups)
+}
+
+pub fn part_two(input: &str) -> Option<usize> {
     let mut sum = 0;
     for line in input.lines() {
         let (seq, ins) = line.split_once(' ').unwrap();
-        let ins = ins
-            .repeat(5)
-            .split(',')
-            .map(|c| c.parse::<usize>().ok().unwrap())
-            .collect_vec();
-        sum += solve(seq.repeat(5).as_str(), ins)
+        let (seq, ins) = unfold(
+            seq.chars().collect_vec(),
+            ins.split(',')
+                .map(|c| c.parse::<usize>().ok().unwrap())
+                .collect::<Vec<usize>>(),
+            5,
+        );
+        sum += solve(seq.iter().collect::<String>().as_str(), ins)
     }
-    Some(sum as u32)
+    Some(sum as usize)
 }
 
 aoc::solution!(12);
