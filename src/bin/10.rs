@@ -69,11 +69,9 @@ fn cycle_from_start(
     dir: (usize, usize),
 ) -> Vec<(usize, usize)> {
     let mut visited = vec![];
-    let start_init = start;
     let mut possible_dir = vec![dir];
-    let mut next = start;
     while !possible_dir.is_empty() {
-        next = possible_dir.pop().unwrap();
+        let mut next = possible_dir.pop().unwrap();
         visited.push(next);
         let prev = start;
         let start = next;
