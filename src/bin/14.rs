@@ -1,5 +1,3 @@
-use std::{collections::HashSet, ops::Index};
-
 pub fn part_one(input: &str) -> Option<u32> {
     let mut sum = 0;
     let mut rows = 0;
@@ -32,11 +30,11 @@ pub fn part_one(input: &str) -> Option<u32> {
     Some(sum as u32)
 }
 
-fn roll(orig_grid: Vec<Vec<char>>, rows: usize, cols: usize) -> Vec<Vec<char>> {
+fn roll(orig_grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     let mut grid = orig_grid.clone();
-    for j in 0..cols {
+    for j in 0..grid[0].len() {
         let mut move_pos = 0;
-        for i in 0..rows {
+        for i in 0..grid.len() {
             match orig_grid[i][j] {
                 'O' => {
                     grid[move_pos][j] = 'O';
@@ -54,7 +52,7 @@ fn roll(orig_grid: Vec<Vec<char>>, rows: usize, cols: usize) -> Vec<Vec<char>> {
     grid
 }
 
-fn rotate_clockwise(grid: Vec<Vec<char>>) -> Vec<Vec<char>> {
+fn rotate_clockwise(grid: &Vec<Vec<char>>) -> Vec<Vec<char>> {
     let rows = grid.len();
     let cols = grid[0].len();
 
@@ -67,46 +65,55 @@ fn rotate_clockwise(grid: Vec<Vec<char>>) -> Vec<Vec<char>> {
     }
     result
 }
-fn weight(grid: Vec<Vec<char>>, rows: usize, cols: usize) -> usize {
+fn weight(grid: &Vec<Vec<char>>) -> usize {
     let mut sum = 0;
-    for j in 1..cols {
-        for i in 1..rows {
+    for j in 0..grid[0].len() {
+        for i in 0..grid.len() {
             match grid[i][j] {
-                'O' => sum += rows - i,
+                'O' => sum += grid.len() - i,
                 _ => continue,
             }
         }
     }
     sum
 }
-fn solve(input: &str, n: u32) -> Option<u32> {
-    let mut rows = 0;
-    let mut cols = 0;
+
+fn solve(input: &str) -> Option<u32> {
     let mut grid = Vec::new();
     for line in input.lines() {
-        cols = 0;
         let mut row = Vec::new();
-        rows += 1;
         for c in line.chars() {
-            cols += 1;
             row.push(c);
         }
         grid.push(row);
     }
-    for i in 0..n {
+    let mut result = Vec::new();
+    for _ in 0..200 {
+        let total = weight(&grid);
+        result.push(total);
         for _ in 0..4 {
-            let mut new_grid = roll(grid.clone(), rows, cols);
-            new_grid = rotate_clockwise(new_grid);
-            let tmp = rows;
-            rows = cols;
-            cols = tmp;
-            grid = new_grid;
+            grid = roll(&grid);
+            grid = rotate_clockwise(&grid);
         }
     }
-    Some(weight(grid, rows, cols) as u32)
+    let mut period = 0;
+    for i in (0..result.len() - 2).rev() {
+        if result[i] == result[result.len() - 1] {
+            period = (result.len() - 1) - i;
+            break;
+        }
+    }
+    let remainred = 1000000000 % period;
+    for i in (0..result.len() - 1).rev() {
+        if i % period == remainred {
+            return Some(result[i] as u32);
+        }
+    }
+    None
 }
+
 pub fn part_two(input: &str) -> Option<u32> {
-    let a = solve(input, 101).unwrap();
+    let a = solve(input).unwrap();
     Some(a)
 }
 
@@ -130,4 +137,3 @@ mod tests {
         );
     }
 }
-
