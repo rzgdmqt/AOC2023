@@ -9,62 +9,95 @@ enum Dir {
     W,
 }
 
-fn dfs(
-    graph: &[char],
-    cols: usize,
-    u: usize,
-    mut path: Vec<usize>,
-    mut visited: HashSet<usize>,
-    mut maximum: usize,
-) -> usize {
-    if u == graph.len() - 2 {
-        return maximum.max(path.len());
-    }
-
+fn neighbours(graph: &[char], cols: usize, source: usize) -> Vec<usize> {
+    let mut neighbours = Vec::new();
     for dir in &[N, S, E, W] {
-        let current = graph[u];
+        let current = graph[source];
         let v = match dir {
             N => {
-                if u < cols || ['v', '<', '>'].contains(&current) {
+                if source < cols || ['v', '<', '>'].contains(&current) {
                     continue;
                 }
-                u - cols
+                source - cols
             }
             S => {
-                if u + cols >= graph.len() || ['^', '<', '>'].contains(&current) {
+                if source + cols >= graph.len() || ['^', '<', '>'].contains(&current) {
                     continue;
                 }
-                u + cols
+                source + cols
             }
             E => {
-                if u + 1 >= graph.len() || ['^', '<', 'v'].contains(&current) {
+                if source + 1 >= graph.len() || ['^', '<', 'v'].contains(&current) {
                     continue;
                 }
-                u + 1
+                source + 1
             }
             W => {
-                if u == 0 || ['^', 'v', '>'].contains(&current) {
+                if source == 0 || ['^', 'v', '>'].contains(&current) {
                     continue;
                 }
-                u - 1
+                source - 1
             }
         };
-        if graph[v] == '#' || visited.contains(&v) {
-            continue;
+        if graph[v] != '#' {
+            neighbours.push(v);
         }
-        path.push(v);
-        visited.insert(v);
-        maximum = dfs(graph, cols, v, path.clone(), visited.clone(), maximum).max(maximum);
-        visited.remove(&v);
-        path.pop();
     }
+    neighbours
+}
+
+fn collapse(
+    graph: &[char],
+    cols: usize,
+    mut source: usize,
+    mut neighbour: usize,
+    mut distance: usize,
+) -> (usize, usize) {
+    let mut n = neighbours(graph, cols, neighbour);
+    while n.len() == 2 {
+        n.retain(|&s| s != source);
+        source = neighbour;
+        neighbour = n[0];
+        distance += 1;
+        n = neighbours(graph, cols, neighbour);
+    }
+    (neighbour, distance)
+}
+
+fn dfs(
+    graph: &Vec<Vec<(usize, usize)>>,
+    head: usize,
+    distance: usize,
+    mut maximum: usize,
+    mut visited: HashSet<usize>,
+) -> usize {
+    if head == graph.len() - 2 {
+        return distance;
+    } else if visited.contains(&head) {
+        return maximum;
+    }
+    visited.insert(head);
+    for (n, d) in graph[head].iter() {
+        maximum = maximum.max(dfs(graph, *n, distance + *d, maximum, visited.clone()))
+    }
+    visited.remove(&head);
     maximum
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
     let cols = input.lines().next().unwrap().len();
     let graph: Vec<char> = input.lines().flat_map(|line| line.chars()).collect();
-    Some(dfs(&graph, cols, 1, vec![1], HashSet::new(), 0) as u32 - 1)
+    let mut collapsed_graph = vec![Vec::new(); graph.len()];
+    for i in 0..graph.len() {
+        if graph[i] != '#' {
+            let nn = neighbours(&graph, cols, i);
+            for n in nn {
+                let aaa = collapse(&graph, cols, i, n, 1);
+                collapsed_graph[i].push(aaa);
+            }
+        }
+    }
+    Some(dfs(&collapsed_graph, 1, 0, 0, HashSet::new()) as u32)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
@@ -75,7 +108,17 @@ pub fn part_two(input: &str) -> Option<u32> {
         .replace('^', ".");
     let cols = input.lines().next().unwrap().len();
     let graph: Vec<char> = input.lines().flat_map(|line| line.chars()).collect();
-    Some(dfs(&graph, cols, 1, vec![1], HashSet::new(), 0) as u32 - 1)
+    let mut collapsed_graph = vec![Vec::new(); graph.len()];
+    for i in 0..graph.len() {
+        if graph[i] != '#' {
+            let nn = neighbours(&graph, cols, i);
+            for n in nn {
+                let aaa = collapse(&graph, cols, i, n, 1);
+                collapsed_graph[i].push(aaa);
+            }
+        }
+    }
+    Some(dfs(&collapsed_graph, 1, 0, 0, HashSet::new()) as u32)
 }
 
 aoc::solution!(23);
